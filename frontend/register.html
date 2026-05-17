@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account — Smart API Health Monitor</title>
+  <meta name="description" content="Create a new account to access the Smart API Health Monitoring dashboard.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="landing-body">
+
+  <!-- Floating Particles -->
+  <div class="particles" id="particles"></div>
+
+  <div class="landing-container glass-panel fade-in">
+    <div class="brand-icon">🛡️</div>
+    <h1 class="gradient-text">Create Account</h1>
+    <p>Sign up to start monitoring your APIs in real time.</p>
+
+    <div class="divider"></div>
+
+    <form id="registerForm" class="auth-form" novalidate>
+      <div class="form-group">
+        <label for="reg-email">Email Address</label>
+        <input type="email" id="reg-email" name="email" required
+               placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="reg-password">Password</label>
+        <input type="password" id="reg-password" name="password" required
+               placeholder="At least 8 characters" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label for="reg-confirm">Confirm Password</label>
+        <input type="password" id="reg-confirm" name="confirm_password" required
+               placeholder="Repeat your password" autocomplete="new-password">
+      </div>
+      <button type="submit" id="registerSubmitBtn" class="primary-btn submit-btn">
+        Create Account →
+      </button>
+    </form>
+
+    <p id="registerError" class="auth-error hidden"></p>
+
+    <p class="auth-hint">
+      Already have an account? <a href="/" class="auth-link">Sign in</a>
+    </p>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 25; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = Math.random() * 4 + 2;
+      p.style.cssText = `
+        width: ${size}px; height: ${size}px;
+        left: ${Math.random() * 100}%;
+        animation-duration: ${Math.random() * 15 + 10}s;
+        animation-delay: ${Math.random() * 10}s;
+        background: ${Math.random() > 0.5 ? '#8b5cf6' : '#4f46e5'};
+        opacity: 0;
+      `;
+      container.appendChild(p);
+    }
+  </script>
+</body>
+</html>

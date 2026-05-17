@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — Smart API Health Monitor</title>
+  <meta name="description" content="Sign in to the Smart API Health Monitoring dashboard to monitor your APIs in real time.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="landing-body">
+
+  <!-- Floating Particles -->
+  <div class="particles" id="particles"></div>
+
+  <div class="landing-container glass-panel fade-in">
+    <div class="brand-icon">⚡</div>
+    <h1 class="gradient-text">API Health Monitor</h1>
+    <p>Production-ready monitoring with intelligent alerting and real-time insights.</p>
+
+    <div class="divider"></div>
+
+    <form id="loginForm" class="auth-form" novalidate>
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" required
+               placeholder="admin@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required
+               placeholder="Enter your password" autocomplete="current-password">
+      </div>
+      <button type="submit" class="primary-btn submit-btn" id="loginSubmitBtn">
+        Sign In →
+      </button>
+    </form>
+
+    <p id="loginError" class="auth-error hidden"></p>
+
+    <p class="auth-hint">
+      Default: <code>admin@example.com</code> / <code>Admin@123</code>
+    </p>
+    <p class="auth-hint">
+      No account? <a href="/register" class="auth-link">Create one here</a>
+    </p>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    // Generate floating particles
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 25; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = Math.random() * 4 + 2;
+      p.style.cssText = `
+        width: ${size}px; height: ${size}px;
+        left: ${Math.random() * 100}%;
+        animation-duration: ${Math.random() * 15 + 10}s;
+        animation-delay: ${Math.random() * 10}s;
+        background: ${Math.random() > 0.5 ? '#0ea5e9' : '#8b5cf6'};
+        opacity: 0;
+      `;
+      container.appendChild(p);
+    }
+  </script>
+</body>
+</html>

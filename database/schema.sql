@@ -1,0 +1,27 @@
+CREATE DATABASE IF NOT EXISTS api_health_monitor;
+USE api_health_monitor;
+
+CREATE TABLE IF NOT EXISTS apis (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    interval_seconds INT NOT NULL DEFAULT 60,
+    threshold_ms INT NOT NULL DEFAULT 1000
+);
+
+CREATE TABLE IF NOT EXISTS logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    api_id INT NOT NULL,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status_code INT,
+    response_time INT,
+    state VARCHAR(20) NOT NULL,
+    FOREIGN KEY (api_id) REFERENCES apis(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
