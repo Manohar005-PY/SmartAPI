@@ -212,14 +212,18 @@ def _execute_schema_file(connection, schema_path):
     cursor = connection.cursor()
     try:
         with open(schema_path, "r", encoding="utf-8") as f:
-            content = f.read()
+            lines = f.readlines()
         
-        # Split by semicolon, filter out comments and empty statements
-        statements = []
-        for statement in content.split(";"):
-            cleaned = statement.strip()
-            if cleaned and not cleaned.startswith("--"):
-                statements.append(cleaned)
+        # Strip comments line by line
+        cleaned_lines = []
+        for line in lines:
+            line_content = line.split("--")[0].strip()
+            if line_content:
+                cleaned_lines.append(line_content)
+        
+        # Join and split by semicolon
+        content = " ".join(cleaned_lines)
+        statements = [s.strip() for s in content.split(";") if s.strip()]
                 
         for stmt in statements:
             cursor.execute(stmt)
