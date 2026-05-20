@@ -6,7 +6,7 @@ gunicorn==21.2.0          # WSGI production server
 python-dotenv==1.0.0      # Load environment variables from .env
 
 # ─── Database ──────────────────────────────────────────────────────────────────
-psycopg2-binary==2.9.9    # PostgreSQL adapter (replaces mysql-connector)
+psycopg2-binary>=2.9.12    # PostgreSQL adapter (replaces mysql-connector)
 
 # ─── HTTP Client (API polling) ─────────────────────────────────────────────────
 requests==2.31.0
