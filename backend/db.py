@@ -183,14 +183,15 @@ def _get_persistent_sqlite_connection() -> sqlite3.Connection:
 
 
 def get_db_connection():
-    global DB_ENGINE
-    if DB_ENGINE == "postgres":
+    if Config.DATABASE_URL:
         return _get_persistent_postgres_connection()
     return _get_persistent_sqlite_connection()
 
 
 def get_db_engine_name() -> str:
-    return DB_ENGINE or "sqlite"
+    if Config.DATABASE_URL:
+        return "postgres"
+    return "sqlite"
 
 
 # ---------------------------------------------------------------------------
@@ -203,6 +204,30 @@ def _execute_table_statements(connection, statements):
         for stmt in statements:
             cursor.execute(stmt)
         connection.commit()
+    finally:
+        cursor.close()
+
+
+def _execute_schema_file(connection, schema_path):
+    cursor = connection.cursor()
+    try:
+        with open(schema_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        # Split by semicolon, filter out comments and empty statements
+        statements = []
+        for statement in content.split(";"):
+            cleaned = statement.strip()
+            if cleaned and not cleaned.startswith("--"):
+                statements.append(cleaned)
+                
+        for stmt in statements:
+            cursor.execute(stmt)
+        connection.commit()
+        print(f"[OK] Executed schema SQL from {schema_path}.")
+    except Exception as exc:
+        connection.rollback()
+        raise RuntimeError(f"Failed to execute schema SQL: {exc}")
     finally:
         cursor.close()
 
@@ -224,16 +249,22 @@ def init_db():
         
         for attempt in range(1, max_retries + 1):
             try:
-                print(f"Connecting to PostgreSQL (attempt {attempt}/{max_retries})...")
+                print(f"[STARTUP] Connecting to PostgreSQL (attempt {attempt}/{max_retries})...")
                 bootstrap_conn = _new_postgres_connection()
-                _execute_table_statements(bootstrap_conn, POSTGRES_TABLE_STATEMENTS)
+                
+                # Resolve schema.sql path and execute it
+                schema_path = os.path.abspath(
+                    os.path.join(os.path.dirname(__file__), "../database/schema.sql")
+                )
+                print(f"[STARTUP] Initialising PostgreSQL schema from {schema_path}...")
+                _execute_schema_file(bootstrap_conn, schema_path)
+                
                 _ensure_default_user(bootstrap_conn)
                 _run_migrations(bootstrap_conn)
                 bootstrap_conn.close()
+                
                 DB_ENGINE = "postgres"
-                # Note: We do NOT verify or pre-open the persistent connection here
-                # to prevent Gunicorn master process from inheriting an active TCP socket.
-                print("[OK] Database initialised -- PostgreSQL.")
+                print("[OK] Database initialised -- Using PostgreSQL exclusively.")
                 return
             except Exception as exc:
                 last_exception = exc
@@ -254,7 +285,7 @@ def init_db():
     _execute_table_statements(conn, SQLITE_TABLE_STATEMENTS)
     _ensure_default_user(conn)
     _run_migrations(conn)
-    print(f"[OK] Database initialised -- SQLite at {get_sqlite_path()}.")
+    print(f"[OK] Database initialised -- Using SQLite fallback at {get_sqlite_path()}.")
 
 
 def _ensure_default_user(conn):
@@ -348,8 +379,7 @@ def _retry(fn):
 
             if is_db_err:
                 print(f"DB error ({exc}), attempting reconnect…")
-                global DB_ENGINE
-                if DB_ENGINE == "postgres":
+                if Config.DATABASE_URL:
                     _postgres_local.connection = None
                 else:
                     _sqlite_local.connection = None
