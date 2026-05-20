@@ -26,12 +26,22 @@ _mysql_lock = threading.Lock()
 
 MYSQL_TABLE_STATEMENTS = [
     """
+    CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS apis (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT,
         name VARCHAR(255) NOT NULL,
         url VARCHAR(255) NOT NULL,
         interval_seconds INT NOT NULL DEFAULT 60,
-        threshold_ms INT NOT NULL DEFAULT 1000
+        threshold_ms INT NOT NULL DEFAULT 1000,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
     """,
     """
@@ -45,24 +55,26 @@ MYSQL_TABLE_STATEMENTS = [
         FOREIGN KEY (api_id) REFERENCES apis(id) ON DELETE CASCADE
     )
     """,
-    """
-    CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        email VARCHAR(255) NOT NULL UNIQUE,
-        password_hash VARCHAR(255) NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-    """,
 ]
 
 SQLITE_TABLE_STATEMENTS = [
     """
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS apis (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
         name TEXT NOT NULL,
         url TEXT NOT NULL,
         interval_seconds INTEGER NOT NULL DEFAULT 60,
-        threshold_ms INTEGER NOT NULL DEFAULT 1000
+        threshold_ms INTEGER NOT NULL DEFAULT 1000,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
     """,
     """
@@ -74,14 +86,6 @@ SQLITE_TABLE_STATEMENTS = [
         response_time INTEGER,
         state TEXT NOT NULL,
         FOREIGN KEY (api_id) REFERENCES apis(id) ON DELETE CASCADE
-    )
-    """,
-    """
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT NOT NULL UNIQUE,
-        password_hash TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
     """,
 ]
@@ -232,6 +236,7 @@ def init_db():
         bootstrap_conn = _new_mysql_connection(include_database=True)
         _execute_table_statements(bootstrap_conn, MYSQL_TABLE_STATEMENTS)
         _ensure_default_user(bootstrap_conn)
+        _run_migrations(bootstrap_conn)
         bootstrap_conn.close()
         DB_ENGINE = "mysql"
         # Now open the persistent connection
@@ -246,6 +251,7 @@ def init_db():
     conn = _get_persistent_sqlite_connection()
     _execute_table_statements(conn, SQLITE_TABLE_STATEMENTS)
     _ensure_default_user(conn)
+    _run_migrations(conn)
     print(f"[OK] Database initialised -- SQLite at {get_sqlite_path()}.")
 
 
@@ -264,6 +270,59 @@ def _ensure_default_user(conn):
         )
         conn.commit()
         print(f"[OK] Default admin account created: {email}")
+    finally:
+        cur.close()
+
+
+def _run_migrations(conn):
+    """
+    Check if the apis table has user_id. If not, add it and assign existing
+    APIs to the first user in the database (default admin).
+    """
+    is_sqlite = is_sqlite_connection(conn)
+    cur = get_cursor(conn, dictionary=True)
+    try:
+        if is_sqlite:
+            cur.execute("PRAGMA table_info(apis)")
+            rows = cur.fetchall()
+            columns = []
+            for r in rows:
+                if hasattr(r, "keys"):
+                    columns.append(r["name"])
+                elif isinstance(r, dict):
+                    columns.append(r["name"])
+                else:
+                    columns.append(r[1])
+        else:
+            cur.execute("SHOW COLUMNS FROM apis LIKE 'user_id'")
+            rows = cur.fetchall()
+            columns = [r["Field"] if isinstance(r, dict) else r[0] for r in rows]
+
+        if "user_id" not in columns:
+            print("[MIGRATION] Adding user_id column to apis table…")
+            if is_sqlite:
+                cur.execute(
+                    "ALTER TABLE apis ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE"
+                )
+            else:
+                cur.execute(
+                    "ALTER TABLE apis ADD COLUMN user_id INT, "
+                    "ADD CONSTRAINT fk_apis_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+                )
+            conn.commit()
+
+            # Assign existing APIs to the first user
+            ph = get_placeholder(conn)
+            cur.execute(f"SELECT id FROM users ORDER BY id ASC LIMIT 1")
+            first_user = fetch_one(cur)
+            if first_user:
+                user_id = first_user["id"] if isinstance(first_user, dict) else first_user[0]
+                cur.execute(f"UPDATE apis SET user_id = {ph} WHERE user_id IS NULL", (user_id,))
+                conn.commit()
+                print(f"[MIGRATION] Assigned existing APIs to user ID {user_id}.")
+    except Exception as exc:
+        conn.rollback()
+        print(f"[MIGRATION ERROR] Failed to run database migrations: {exc}")
     finally:
         cur.close()
 
@@ -299,6 +358,18 @@ def get_all_apis() -> list:
     cur = get_cursor(conn, dictionary=True)
     try:
         cur.execute("SELECT * FROM apis ORDER BY id ASC")
+        return fetch_all(cur)
+    finally:
+        cur.close()
+
+
+@_retry
+def get_apis_by_user(user_id: int) -> list:
+    conn = get_db_connection()
+    ph = get_placeholder(conn)
+    cur = get_cursor(conn, dictionary=True)
+    try:
+        cur.execute(f"SELECT * FROM apis WHERE user_id = {ph} ORDER BY id ASC", (user_id,))
         return fetch_all(cur)
     finally:
         cur.close()
@@ -382,15 +453,15 @@ def get_api_by_id(api_id: int):
 
 
 @_retry
-def add_api(name: str, url: str, interval_seconds: int, threshold_ms: int) -> bool:
+def add_api(user_id: int, name: str, url: str, interval_seconds: int, threshold_ms: int) -> bool:
     conn = get_db_connection()
     ph = get_placeholder(conn)
     cur = get_cursor(conn)
     try:
         cur.execute(
-            f"INSERT INTO apis (name, url, interval_seconds, threshold_ms)"
-            f" VALUES ({ph}, {ph}, {ph}, {ph})",
-            (name, url, interval_seconds, threshold_ms),
+            f"INSERT INTO apis (user_id, name, url, interval_seconds, threshold_ms)"
+            f" VALUES ({ph}, {ph}, {ph}, {ph}, {ph})",
+            (user_id, name, url, interval_seconds, threshold_ms),
         )
         conn.commit()
         return True

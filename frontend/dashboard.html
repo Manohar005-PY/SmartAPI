@@ -5,90 +5,284 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard — Smart API Health Monitor</title>
   <meta name="description" content="Real-time API health monitoring dashboard with intelligent alerting.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="dash-page">
 
-  <!-- ── Header ── -->
-  <header class="glass-header fade-in">
-    <div class="logo">
-      <h2 class="gradient-text">⚡ API Health Monitor</h2>
-      <p id="sessionUser" class="session-user"></p>
-    </div>
-    <div class="header-actions">
-      <div class="live-badge">
-        <span class="live-dot"></span>
-        Live
-      </div>
-      <button class="primary-btn pulse-btn" id="openAddModalBtn">+ Add API</button>
-      <button class="secondary-btn" id="logoutBtn">Sign Out</button>
-    </div>
-  </header>
+  <!-- Ambient background (matches Register page) -->
+  <div class="auth-bg-mesh"></div>
+  <div class="auth-orb auth-orb-1"></div>
+  <div class="auth-orb auth-orb-2"></div>
+  <div class="auth-orb auth-orb-3"></div>
+  <div class="auth-particles" id="particles"></div>
 
-  <!-- ── Main Content ── -->
-  <main class="container">
+  <div class="dash-split">
 
-    <!-- API Cards -->
-    <p class="section-title">Monitored Endpoints</p>
-    <section class="cards-section">
-      <div id="apiCardsContainer" class="cards-grid">
-        <!-- Skeleton loading state -->
-        <div class="api-card" style="opacity:0.4">
-          <div class="card-header">
-            <div class="skeleton" style="height:18px;width:60%"></div>
-            <div class="skeleton" style="height:22px;width:60px;border-radius:20px"></div>
+    <!-- ── LEFT SIDEBAR — Branding & Quick Controls ── -->
+    <aside class="auth-left dash-sidebar">
+      <div>
+        <div class="auth-brand">
+          <div class="auth-brand-icon">🛡️</div>
+          <div>
+            <div class="auth-brand-name">API Health Monitor</div>
+            <div class="auth-brand-tagline">Smart Monitoring Platform</div>
           </div>
-          <div class="card-metrics">
-            <div class="metric-row"><div class="skeleton" style="height:14px;width:100%"></div></div>
-            <div class="metric-row"><div class="skeleton" style="height:14px;width:80%"></div></div>
+        </div>
+
+        <!-- User profile display -->
+        <div class="dash-profile">
+          <div class="profile-avatar">👨‍💻</div>
+          <div class="profile-details">
+            <div class="profile-lbl">Logged in as</div>
+            <div id="sessionUser" class="profile-email">...</div>
+          </div>
+        </div>
+
+        <!-- Sidebar Navigation Buttons -->
+        <nav class="dash-nav">
+          <button class="nav-item active" id="navDashboardBtn">
+            <span class="nav-icon">📊</span> Dashboard
+          </button>
+          <button class="nav-item pulse-btn" id="openAddModalBtn">
+            <span class="nav-icon">⊕</span> Add API
+          </button>
+          <button class="nav-item" id="logoutBtn">
+            <span class="nav-icon">🚪</span> Sign Out
+          </button>
+        </nav>
+      </div>
+
+      <!-- Sidebar footer stats -->
+      <div class="auth-left-footer">
+        <div class="auth-stats-row">
+          <div class="auth-stat">
+            <div class="auth-stat-val" id="sbUptime">99.9%</div>
+            <div class="auth-stat-lbl">Uptime</div>
+          </div>
+          <div class="auth-stat">
+            <div class="auth-stat-val" id="sbActive">Live</div>
+            <div class="auth-stat-lbl">Status</div>
           </div>
         </div>
       </div>
-    </section>
+    </aside>
 
-    <!-- Chart -->
-    <p class="section-title">Response Time Analytics</p>
-    <section class="chart-section glass-panel fade-in">
-      <div class="graph-container">
-        <canvas id="responseChart"></canvas>
+    <!-- ── RIGHT MAIN PANEL — Workspace & Metrics ── -->
+    <main class="dash-main">
+      <!-- Top header for Mobile/Tablet only -->
+      <header class="mobile-dash-header">
+        <div class="auth-brand">
+          <div class="auth-brand-icon" style="width:34px;height:34px;font-size:15px;border-radius:10px;">🛡️</div>
+          <div>
+            <div class="auth-brand-name" style="font-size:0.9rem;color:#fff;">API Health Monitor</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="mobile-add-btn" id="openAddModalBtnMobile">⊕ Add</button>
+          <button class="mobile-logout-btn" id="logoutBtnMobile">🚪</button>
+        </div>
+      </header>
+
+      <!-- Main container -->
+      <div class="dash-content-container fade-in">
+        
+        <!-- Workspace header title & live badge -->
+        <div class="dash-workspace-header">
+          <div class="workspace-title-row">
+            <h1>System Control Center</h1>
+            <p>Observe the performance and status of your active endpoints in real-time.</p>
+          </div>
+          <div class="live-badge">
+            <span class="live-dot"></span>
+            Live Monitoring
+          </div>
+        </div>
+
+        <!-- Glass stats bar widget -->
+        <div class="stats-bar slide-up" id="statsBar">
+          <div class="stat-item">
+            <div class="stat-value" id="statTotal">—</div>
+            <div class="stat-label">Total APIs</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="statOk" style="background:linear-gradient(135deg,#0D9488,#10B981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">—</div>
+            <div class="stat-label">Healthy</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="statSlow" style="background:linear-gradient(135deg,#D97706,#F59E0B);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">—</div>
+            <div class="stat-label">Slow</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="statFail" style="background:linear-gradient(135deg,#DC2626,#EF4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">—</div>
+            <div class="stat-label">Down</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="statUptime">—</div>
+            <div class="stat-label">Uptime %</div>
+          </div>
+        </div>
+
+        <!-- API Cards Section -->
+        <div class="section-title">
+          <span class="title-icon">📡</span>
+          Monitored Endpoints
+          <span class="count-badge" id="apiCount">0</span>
+        </div>
+
+        <section style="margin-bottom: 40px;">
+          <div id="apiCardsContainer" class="cards-grid">
+            <!-- Skeleton Placeholders -->
+            <div class="api-card state-PENDING" style="opacity:0.4">
+              <div class="card-header">
+                <div class="skeleton" style="height:18px;width:55%;border-radius:5px;"></div>
+                <div class="skeleton" style="height:24px;width:68px;border-radius:99px;"></div>
+              </div>
+              <div class="card-metrics">
+                <div class="metric-row"><div class="skeleton" style="height:13px;width:100%;"></div></div>
+                <div class="metric-row"><div class="skeleton" style="height:13px;width:72%;"></div></div>
+              </div>
+            </div>
+            <div class="api-card state-PENDING" style="opacity:0.25">
+              <div class="card-header">
+                <div class="skeleton" style="height:18px;width:65%;border-radius:5px;"></div>
+                <div class="skeleton" style="height:24px;width:68px;border-radius:99px;"></div>
+              </div>
+              <div class="card-metrics">
+                <div class="metric-row"><div class="skeleton" style="height:13px;width:100%;"></div></div>
+                <div class="metric-row"><div class="skeleton" style="height:13px;width:58%;"></div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chart Section -->
+        <div class="section-title">
+          <span class="title-icon">📈</span>
+          Response Time Analytics
+        </div>
+        <section class="chart-section glass-panel fade-in">
+          <div class="chart-header">
+            <h3>Historical Response Times</h3>
+            <span style="font-size:0.76rem;color:var(--auth-muted);">Refreshes every 5 s</span>
+          </div>
+          <div class="graph-container">
+            <canvas id="responseChart"></canvas>
+          </div>
+          <p class="chart-subtitle">Live response time data for all monitored endpoints</p>
+        </section>
+
       </div>
-      <p class="chart-subtitle">Historical response times of monitored APIs — refreshes every 5 s</p>
-    </section>
+    </main>
 
-  </main>
+  </div>
 
   <!-- ── Add API Modal ── -->
   <div id="addApiModal" class="modal-overlay hidden">
     <div class="modal-content glass-panel bounce-in">
-      <span class="close-btn" id="closeAddModalBtn" title="Close">&times;</span>
-      <h3 class="gradient-text">Add New API</h3>
+      <button class="close-btn" id="closeAddModalBtn" title="Close" aria-label="Close">✕</button>
+      <div class="auth-heading" style="margin-bottom: 24px;">
+        <div class="auth-greeting">📡 New Monitor</div>
+        <h3 class="gradient-text" style="font-size: 1.55rem; margin-top: 5px;">Add New API</h3>
+        <p style="font-size: 0.85rem; color: var(--auth-sub);">Configure an endpoint for real-time tracking.</p>
+      </div>
 
-      <form id="addApiForm">
-        <div class="form-group">
+      <form id="addApiForm" class="auth-form">
+        <div class="auth-field">
           <label for="name">API Name</label>
-          <input type="text" id="name" name="name" required placeholder="e.g. User Service">
+          <div class="auth-input-row">
+            <span class="a-icon">📝</span>
+            <input type="text" id="name" name="name" required placeholder="e.g. User Service">
+          </div>
         </div>
-        <div class="form-group">
+        <div class="auth-field">
           <label for="url">Endpoint URL</label>
-          <input type="url" id="url" name="url" required placeholder="https://api.example.com/health">
+          <div class="auth-input-row">
+            <span class="a-icon">🌐</span>
+            <input type="url" id="url" name="url" required placeholder="https://api.example.com/health">
+          </div>
         </div>
-        <div class="form-group">
+        <div class="auth-field">
           <label for="interval">Check Interval (seconds)</label>
-          <input type="number" id="interval" name="interval" value="60" min="5" required>
+          <div class="auth-input-row">
+            <span class="a-icon">⏱</span>
+            <input type="number" id="interval" name="interval" value="60" min="5" required>
+          </div>
         </div>
-        <div class="form-group">
+        <div class="auth-field">
           <label for="threshold">Slow Threshold (ms)</label>
-          <input type="number" id="threshold" name="threshold" value="1000" min="10" required>
+          <div class="auth-input-row">
+            <span class="a-icon">⚡</span>
+            <input type="number" id="threshold" name="threshold" value="1000" min="10" required>
+          </div>
         </div>
-        <button type="submit" class="primary-btn submit-btn">Start Monitoring →</button>
+        <button type="submit" class="auth-submit submit-btn" style="margin-top: 10px;">
+          Start Monitoring →
+          <span style="font-size:1.1rem;display:inline-block;animation:button-shift 2.5s infinite;">⚡</span>
+        </button>
       </form>
     </div>
   </div>
 
   <!-- ── Toast ── -->
-  <div id="toast" class="toast hidden"></div>
+  <div id="toast" class="toast hidden">
+    <span class="toast-icon"></span>
+    <span id="toastText"></span>
+  </div>
 
   <script src="script.js"></script>
+  <script>
+    /* ── Teal particles ── */
+    const container = document.getElementById('particles');
+    const shades = ['#14B8A6','#2DD4BF','#5EEAD4','#10B981','#34D399','#06B6D4','#22D3EE','#0D9488'];
+    for (let i = 0; i < 28; i++) {
+      const p = document.createElement('div');
+      p.className = 'auth-particle';
+      const size = Math.random() * 5 + 2;
+      const shade = shades[Math.floor(Math.random() * shades.length)];
+      p.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;
+        animation-duration:${Math.random()*18+10}s;animation-delay:-${Math.random()*18}s;
+        background:${shade};box-shadow:0 0 ${size*2}px ${shade};opacity:0;`;
+      container.appendChild(p);
+    }
+
+    /* ── 3D card tilt (applied whenever cards are rendered) ── */
+    function applyCardTilt() {
+      document.querySelectorAll('.api-card').forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          const cx = rect.left + rect.width  / 2;
+          const cy = rect.top  + rect.height / 2;
+          const dx = (e.clientX - cx) / (rect.width  / 2);
+          const dy = (e.clientY - cy) / (rect.height / 2);
+          card.style.transition = 'transform 0.08s linear, box-shadow 0.3s ease';
+          card.style.transform  = `perspective(900px) rotateX(${dy * -5}deg) rotateY(${dx * 5}deg) translateY(-8px) scale(1.015)`;
+        });
+        card.addEventListener('mouseleave', () => {
+          card.style.transition = 'transform 0.55s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.4s ease';
+          card.style.transform  = '';
+        });
+      });
+    }
+
+    // Re-apply tilt after each card render
+    const cardObserver = new MutationObserver(applyCardTilt);
+    const cardCont = document.getElementById('apiCardsContainer');
+    if (cardCont) cardObserver.observe(cardCont, { childList: true });
+
+    // Connect Mobile buttons
+    document.getElementById('openAddModalBtnMobile')?.addEventListener('click', () => {
+      document.getElementById('addApiModal')?.classList.remove('hidden');
+    });
+    document.getElementById('logoutBtnMobile')?.addEventListener('click', async () => {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } finally {
+        window.location.replace('/');
+      }
+    });
+  </script>
 </body>
 </html>

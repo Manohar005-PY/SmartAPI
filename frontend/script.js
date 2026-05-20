@@ -163,7 +163,7 @@ async function initDashboard() {
     if (!sessionData) return;
 
     if (sessionUser) {
-        sessionUser.textContent = `Signed in as ${sessionData.user.email}`;
+        sessionUser.textContent = sessionData.user.email;
     }
 
     wireDashboardEvents();
@@ -297,39 +297,76 @@ async function fetchStatus() {
 function renderCards(apis) {
     if (!apiCardsContainer) return;
 
+    // Update stats bar
+    updateStats(apis);
+
+    // Update count badge
+    const countBadge = document.getElementById('apiCount');
+    if (countBadge) countBadge.textContent = apis.length;
+
     if (apis.length === 0) {
         apiCardsContainer.innerHTML = `
             <div class="empty-state">
-                <div class="empty-icon">📡</div>
+                <span class="empty-icon">📡</span>
                 <h3>No APIs tracked yet</h3>
-                <p>Click <strong>+ Add API</strong> to start monitoring your endpoints.</p>
+                <p>Click <strong>⊕ Add API</strong> to start monitoring your endpoints.</p>
             </div>`;
         return;
     }
 
-    apiCardsContainer.innerHTML = apis.map((api) => `
+    const stateIcon = { OK: '✅', SLOW: '⚠️', FAIL: '🔴', PENDING: '⏳' };
+    const stateLabel = { OK: 'Healthy', SLOW: 'Slow', FAIL: 'Down', PENDING: 'Pending' };
+
+    apiCardsContainer.innerHTML = apis.map((api) => {
+        // Compute response bar width (cap at 100%, treat > 2000ms as 100%)
+        const barPct = Math.min(100, ((api.response_time || 0) / 2000) * 100).toFixed(1);
+        const urlDisplay = escHtml(api.url || '').replace(/^https?:\/\//, '');
+        return `
         <div class="api-card state-${api.state}">
             <div class="card-header">
-                <h3 title="${escHtml(api.name)}">${escHtml(api.name)}</h3>
-                <span class="status-badge">${api.state}</span>
+                <div class="card-name-wrap">
+                    <div class="card-api-icon">${stateIcon[api.state] || '🔵'}</div>
+                    <h3 title="${escHtml(api.name)}">${escHtml(api.name)}</h3>
+                </div>
+                <span class="status-badge">${stateLabel[api.state] || api.state}</span>
             </div>
             <div class="card-metrics">
                 <div class="metric-row">
                     <span class="metric-label">Response Time</span>
-                    <span class="metric-value highlight">${api.response_time} ms</span>
+                    <span class="metric-value highlight">${api.response_time != null ? api.response_time + ' ms' : 'N/A'}</span>
+                </div>
+                <div class="response-bar-wrap">
+                    <div class="response-bar-track"><div class="response-bar-fill" style="width:${barPct}%"></div></div>
                 </div>
                 <div class="metric-row">
-                    <span class="metric-label">Status Code</span>
+                    <span class="metric-label">HTTP Status</span>
                     <span class="metric-value">${api.status_code || 'N/A'}</span>
                 </div>
             </div>
+            <div class="url-chip">🌐 ${urlDisplay}</div>
             <div class="card-meta">
                 <span>⏱ ${api.interval}s interval</span>
                 <span>⚡ ${api.threshold}ms threshold</span>
             </div>
-            <button class="delete-btn" data-id="${api.id}" onclick="deleteApi(${api.id})">✕ Remove</button>
+            <button class="delete-btn" data-id="${api.id}" onclick="deleteApi(${api.id})">🗑 Remove</button>
         </div>
-    `).join('');
+    `;
+    }).join('');
+}
+
+function updateStats(apis) {
+    const total = apis.length;
+    const ok    = apis.filter(a => a.state === 'OK').length;
+    const slow  = apis.filter(a => a.state === 'SLOW').length;
+    const fail  = apis.filter(a => a.state === 'FAIL').length;
+    const uptimePct = total > 0 ? (((ok + slow) / total) * 100).toFixed(1) : '—';
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('statTotal',  total || '—');
+    set('statOk',     ok    || '—');
+    set('statSlow',   slow  || '—');
+    set('statFail',   fail  || '—');
+    set('statUptime', total > 0 ? uptimePct + '%' : '—');
 }
 
 /** Minimal HTML escaping to prevent XSS via API names. */
@@ -365,12 +402,17 @@ window.deleteApi = deleteApi;
 
 function showToast(message, type = 'info') {
     if (!toast) return;
-    toast.textContent = message;
+    const textEl = document.getElementById('toastText');
+    if (textEl) {
+        textEl.textContent = message;
+    } else {
+        toast.textContent = message;
+    }
     toast.className   = `toast ${type}`;
     window.clearTimeout(toast._hideTimer);
     toast._hideTimer = window.setTimeout(() => {
         toast.classList.add('hidden');
-    }, 3500);
+    }, 3800);
 }
 
 // ---------------------------------------------------------------------------
@@ -401,8 +443,14 @@ async function updateLineChartHistory(apis) {
     if (!ctxElement || typeof Chart === 'undefined') return;
 
     if (!responseChart) {
-        Chart.defaults.color = '#475569';
-        Chart.defaults.borderColor = 'rgba(79,70,229,0.08)';
+        Chart.defaults.color = '#94A3B8';
+        Chart.defaults.borderColor = 'rgba(20, 184, 166, 0.12)';
+
+        // Premium indigo/violet/sky palette
+        const PALETTE = [
+            '#2DD4BF', '#0EA5E9', '#8B5CF6', '#34D399',
+            '#6366F1', '#FBBF24', '#F87171', '#EC4899'
+        ];
 
         responseChart = new Chart(ctxElement, {
             type: 'line',
@@ -410,50 +458,61 @@ async function updateLineChartHistory(apis) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: { duration: 600, easing: 'easeInOutQuart' },
+                animation: { duration: 900, easing: 'easeInOutQuart' },
                 elements: {
-                    line:  { tension: 0.4 },
-                    point: { radius: 3, hoverRadius: 6, borderWidth: 2 },
+                    line:  { tension: 0.42, borderWidth: 2.5 },
+                    point: { radius: 4, hoverRadius: 8, borderWidth: 2.5, backgroundColor: '#090D16', hoverBorderWidth: 3 },
                 },
                 plugins: {
-                    legend:  {
+                    legend: {
                         labels: {
-                            color: '#475569',
-                            font: { family: 'Inter', size: 12 },
+                            color: '#94A3B8',
+                            font: { family: 'Inter', size: 12, weight: '600' },
                             usePointStyle: true,
                             pointStyleWidth: 10,
+                            padding: 20,
                         },
                     },
                     tooltip: {
                         mode: 'index',
                         intersect: false,
-                        backgroundColor: 'rgba(255,255,255,0.96)',
-                        borderColor: 'rgba(79,70,229,0.20)',
-                        borderWidth: 1,
-                        titleColor: '#1e293b',
-                        bodyColor: '#475569',
-                        padding: 12,
+                        backgroundColor: '#0F172A',
+                        borderColor: 'rgba(20, 184, 166, 0.35)',
+                        borderWidth: 1.5,
+                        titleColor: '#FFFFFF',
+                        bodyColor: '#94A3B8',
+                        padding: 14,
+                        cornerRadius: 12,
+                        titleFont: { family: 'Manrope', weight: '700', size: 13 },
+                        bodyFont:  { family: 'JetBrains Mono', size: 12 },
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.30)',
+                        callbacks: {
+                            label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y} ms`,
+                        }
                     },
                 },
                 scales: {
                     x: {
-                        grid: { color: 'rgba(79,70,229,0.06)' },
-                        ticks: { color: '#475569', font: { size: 11 } },
+                        grid: { color: 'rgba(20, 184, 166, 0.08)', drawBorder: false },
+                        ticks: { color: '#94A3B8', font: { size: 11, family: 'Inter' } },
+                        border: { display: false },
                     },
                     y: {
                         beginAtZero: true,
-                        grid: { color: 'rgba(79,70,229,0.06)' },
-                        ticks: { color: '#475569', font: { size: 11 } },
+                        grid: { color: 'rgba(20, 184, 166, 0.08)', drawBorder: false },
+                        ticks: { color: '#94A3B8', font: { size: 11, family: 'Inter' } },
+                        border: { display: false },
                         title: {
                             display: true,
                             text: 'Response Time (ms)',
-                            color: '#475569',
-                            font: { size: 11 },
+                            color: '#94A3B8',
+                            font: { size: 11, family: 'Inter', weight: '600' },
                         },
                     },
                 },
             },
         });
+        responseChart._palette = PALETTE;
     }
 
     const datasets = [];
@@ -476,9 +535,9 @@ async function updateLineChartHistory(apis) {
                 });
             }
 
-            const hue     = (i * 137.508) % 360;
-            const color   = `hsl(${hue}, 80%, 55%)`;
-            const bgColor = `hsla(${hue}, 80%, 55%, 0.12)`;
+            const palette = responseChart._palette || ['#6366F1','#8B5CF6','#0EA5E9','#10B981'];
+            const color   = palette[i % palette.length];
+            const bgColor = color + '20';
 
             datasets.push({
                 label:           api.name,

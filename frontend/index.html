@@ -3,66 +3,275 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign In — Smart API Health Monitor</title>
-  <meta name="description" content="Sign in to the Smart API Health Monitoring dashboard to monitor your APIs in real time.">
+  <title>Sign In — API Health Monitor</title>
+  <meta name="description" content="Sign in to your API Health Monitor account and keep your services running smoothly.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="landing-body">
+<body class="auth-page">
 
-  <!-- Floating Particles -->
-  <div class="particles" id="particles"></div>
+  <!-- Ambient background -->
+  <div class="auth-bg-mesh"></div>
+  <div class="auth-orb auth-orb-1"></div>
+  <div class="auth-orb auth-orb-2"></div>
+  <div class="auth-orb auth-orb-3"></div>
+  <div class="auth-particles" id="particles"></div>
 
-  <div class="landing-container glass-panel fade-in">
-    <div class="brand-icon">⚡</div>
-    <h1 class="gradient-text">API Health Monitor</h1>
-    <p>Production-ready monitoring with intelligent alerting and real-time insights.</p>
+  <!-- Split Layout -->
+  <div class="auth-split">
 
-    <div class="divider"></div>
-
-    <form id="loginForm" class="auth-form" novalidate>
-      <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" name="email" required
-               placeholder="admin@example.com" autocomplete="email">
+    <!-- ── LEFT — Brand & Features ── -->
+    <aside class="auth-left">
+      <div class="auth-brand">
+        <div class="auth-brand-icon">⚡</div>
+        <div>
+          <div class="auth-brand-name">API Health Monitor</div>
+          <div class="auth-brand-tagline">Smart Monitoring Platform</div>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required
-               placeholder="Enter your password" autocomplete="current-password">
+
+      <div class="auth-hero">
+        <h2>Keep your APIs<br><span class="hl">always healthy.</span></h2>
+        <p>
+          Get real-time alerts when something breaks. Monitor response times,
+          uptime, and performance — all from one simple dashboard.
+        </p>
+        <ul class="auth-features">
+          <li><div class="feat-dot">📡</div> Watch all your APIs from one place</li>
+          <li><div class="feat-dot">⚡</div> Get alerts the moment something goes down</li>
+          <li><div class="feat-dot">📈</div> See response time history and trends</li>
+          <li><div class="feat-dot">🔒</div> Your data is private and secure</li>
+        </ul>
       </div>
-      <button type="submit" class="primary-btn submit-btn" id="loginSubmitBtn">
-        Sign In →
-      </button>
-    </form>
 
-    <p id="loginError" class="auth-error hidden"></p>
+      <div class="auth-left-footer">
+        <div class="auth-stats-row">
+          <div class="auth-stat">
+            <div class="auth-stat-val">99.9%</div>
+            <div class="auth-stat-lbl">Uptime</div>
+          </div>
+          <div class="auth-stat">
+            <div class="auth-stat-val">&lt;5s</div>
+            <div class="auth-stat-lbl">Alert speed</div>
+          </div>
+          <div class="auth-stat">
+            <div class="auth-stat-val">24/7</div>
+            <div class="auth-stat-lbl">Monitoring</div>
+          </div>
+        </div>
+      </div>
+    </aside>
 
-    <p class="auth-hint">
-      Default: <code>admin@example.com</code> / <code>Admin@123</code>
-    </p>
-    <p class="auth-hint">
-      No account? <a href="/register" class="auth-link">Create one here</a>
-    </p>
+    <!-- ── RIGHT — Form + Animated Preview Cards ── -->
+    <main class="auth-right">
+
+      <!-- Glow spots -->
+      <div class="rp-glow rp-glow-1"></div>
+      <div class="rp-glow rp-glow-2"></div>
+
+      <!-- ════ FLOATING PREVIEW CARDS ════ -->
+      <div class="rp-floats">
+
+        <!-- SVG gradient def for uptime ring -->
+        <svg width="0" height="0" style="position:absolute">
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%"   stop-color="#2DD4BF"/>
+              <stop offset="100%" stop-color="#10B981"/>
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <!-- Card 1: System Status (top-right) -->
+        <div class="rp-card rp-card-status">
+          <div class="rp-status-row">
+            <div class="rp-status-dot"></div>
+            <div class="rp-status-label">All Systems OK</div>
+          </div>
+          <div class="rp-status-sub">6 / 6 endpoints healthy</div>
+          <div class="rp-mini-bars">
+            <div class="rp-bar"></div><div class="rp-bar"></div>
+            <div class="rp-bar"></div><div class="rp-bar"></div>
+            <div class="rp-bar"></div><div class="rp-bar"></div>
+            <div class="rp-bar"></div>
+          </div>
+        </div>
+
+        <!-- Card 2: Avg Response Time (bottom-right) -->
+        <div class="rp-card rp-card-metric">
+          <div class="rp-metric-label">Avg Response</div>
+          <div class="rp-metric-value" id="rp-ms">142</div>
+          <div class="rp-metric-unit">milliseconds · p95</div>
+          <div class="rp-sparkline">
+            <div class="rp-spark"></div><div class="rp-spark"></div>
+            <div class="rp-spark"></div><div class="rp-spark"></div>
+            <div class="rp-spark"></div><div class="rp-spark"></div>
+            <div class="rp-spark"></div><div class="rp-spark"></div>
+          </div>
+        </div>
+
+        <!-- Card 3: Uptime Ring (top-left) -->
+        <div class="rp-card rp-card-uptime">
+          <div class="rp-ring-wrap">
+            <svg class="rp-ring-svg" viewBox="0 0 68 68">
+              <circle class="rp-ring-track" cx="34" cy="34" r="27"/>
+              <circle class="rp-ring-fill"  cx="34" cy="34" r="27"/>
+            </svg>
+            <div class="rp-ring-center">
+              <div class="rp-ring-pct">99.9</div>
+              <div class="rp-ring-lbl">%</div>
+            </div>
+          </div>
+          <div class="rp-uptime-label">Uptime · 30 days</div>
+        </div>
+
+        <!-- Card 4: Live Activity Feed (bottom-left) -->
+        <div class="rp-card rp-card-feed">
+          <div class="rp-feed-title">
+            <div class="rp-feed-live-dot"></div>
+            Live checks
+          </div>
+          <div class="rp-feed-rows" id="rpFeedRows">
+            <div class="rp-feed-row ok">
+              <span class="rp-feed-icon">✅</span>
+              <span class="rp-feed-name">Payments API</span>
+              <span class="rp-feed-time">89ms</span>
+            </div>
+            <div class="rp-feed-row ok">
+              <span class="rp-feed-icon">✅</span>
+              <span class="rp-feed-name">Auth Service</span>
+              <span class="rp-feed-time">121ms</span>
+            </div>
+            <div class="rp-feed-row slow">
+              <span class="rp-feed-icon">⚠️</span>
+              <span class="rp-feed-name">Report Worker</span>
+              <span class="rp-feed-time">1.4s</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end .rp-floats -->
+
+      <!-- ════ ACTUAL FORM ════ -->
+      <div class="auth-form-wrap">
+        <div class="auth-heading">
+          <div class="auth-greeting">👋 Welcome back</div>
+          <h1>Sign in to your account</h1>
+          <p>Enter your email and password to continue.</p>
+        </div>
+
+        <form id="loginForm" class="auth-form" novalidate>
+          <div class="auth-field">
+            <label for="email">Your email</label>
+            <div class="auth-input-row">
+              <span class="a-icon">✉</span>
+              <input type="email" id="email" name="email" required
+                placeholder="e.g. admin@example.com" autocomplete="email">
+            </div>
+          </div>
+
+          <div class="auth-field">
+            <label for="password">Your password</label>
+            <div class="auth-input-row">
+              <span class="a-icon">🔑</span>
+              <input type="password" id="password" name="password" required
+                placeholder="Enter your password" autocomplete="current-password">
+            </div>
+          </div>
+
+          <button type="submit" class="auth-submit" id="loginSubmitBtn">
+            Sign in  →
+          </button>
+        </form>
+
+        <div id="loginError" class="auth-error-msg hidden">
+          <span>⚠</span>
+          <span id="loginErrorText"></span>
+        </div>
+
+        <div class="auth-hint-box">
+          💡 Try: <code>admin@example.com</code> / <code>Admin@123</code>
+        </div>
+
+        <p class="auth-switch">
+          Don't have an account yet? <a href="/register">Create one — it's free</a>
+        </p>
+      </div>
+
+    </main>
   </div>
 
   <script src="script.js"></script>
   <script>
-    // Generate floating particles
+    /* ── Teal particles ── */
     const container = document.getElementById('particles');
-    for (let i = 0; i < 25; i++) {
+    const shades = ['#14B8A6','#2DD4BF','#5EEAD4','#10B981','#34D399','#06B6D4','#22D3EE','#0D9488'];
+    for (let i = 0; i < 32; i++) {
       const p = document.createElement('div');
-      p.className = 'particle';
-      const size = Math.random() * 4 + 2;
-      p.style.cssText = `
-        width: ${size}px; height: ${size}px;
-        left: ${Math.random() * 100}%;
-        animation-duration: ${Math.random() * 15 + 10}s;
-        animation-delay: ${Math.random() * 10}s;
-        background: ${Math.random() > 0.5 ? '#0ea5e9' : '#8b5cf6'};
-        opacity: 0;
-      `;
+      p.className = 'auth-particle';
+      const size = Math.random() * 5 + 2;
+      const shade = shades[Math.floor(Math.random() * shades.length)];
+      p.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;
+        animation-duration:${Math.random()*18+10}s;animation-delay:-${Math.random()*18}s;
+        background:${shade};box-shadow:0 0 ${size*2}px ${shade};opacity:0;`;
       container.appendChild(p);
     }
+
+    /* ── Animate the ms counter on the metric card ── */
+    const msEl = document.getElementById('rp-ms');
+    const baseValues = [98, 112, 137, 142, 128, 156, 119, 144, 133, 108];
+    let msIdx = 0;
+    if (msEl) {
+      setInterval(() => {
+        msIdx = (msIdx + 1) % baseValues.length;
+        msEl.style.transition = 'opacity 0.4s ease';
+        msEl.style.opacity = '0.3';
+        setTimeout(() => {
+          msEl.textContent = baseValues[msIdx];
+          msEl.style.opacity = '1';
+        }, 420);
+      }, 2800);
+    }
+
+    /* ── Animate the activity feed rows ── */
+    const feedData = [
+      { state: 'ok',   icon: '✅', name: 'Payments API',   time: '89ms' },
+      { state: 'ok',   icon: '✅', name: 'Auth Service',   time: '121ms' },
+      { state: 'slow', icon: '⚠️', name: 'Report Worker',  time: '1.4s' },
+      { state: 'ok',   icon: '✅', name: 'User API',       time: '76ms' },
+      { state: 'ok',   icon: '✅', name: 'Storage Svc',    time: '203ms' },
+      { state: 'fail', icon: '🔴', name: 'Legacy Proxy',   time: 'Error' },
+      { state: 'ok',   icon: '✅', name: 'Webhook Relay',  time: '55ms' },
+    ];
+    const feedContainer = document.getElementById('rpFeedRows');
+    let feedStart = 0;
+    function cycleFeed() {
+      if (!feedContainer) return;
+      const items = feedData.slice(feedStart, feedStart + 3);
+      feedContainer.innerHTML = items.map(r => `
+        <div class="rp-feed-row ${r.state}" style="animation-delay:0s">
+          <span class="rp-feed-icon">${r.icon}</span>
+          <span class="rp-feed-name">${r.name}</span>
+          <span class="rp-feed-time">${r.time}</span>
+        </div>`).join('');
+      feedStart = (feedStart + 1) % feedData.length;
+    }
+    setInterval(cycleFeed, 2500);
+
+    /* ── Error patch for script.js ── */
+    const loginErrorEl   = document.getElementById('loginError');
+    const loginErrorText = document.getElementById('loginErrorText');
+    const errObserver = new MutationObserver(() => {
+      const txt = loginErrorEl.textContent.trim();
+      if (txt && loginErrorText) {
+        loginErrorText.textContent = txt;
+        if (loginErrorEl.childNodes.length === 1 && loginErrorEl.childNodes[0].nodeType === 3) {
+          loginErrorEl.innerHTML = `<span>⚠</span><span id="loginErrorText">${txt}</span>`;
+        }
+      }
+    });
+    errObserver.observe(loginErrorEl, { childList: true, subtree: true, characterData: true });
   </script>
 </body>
 </html>

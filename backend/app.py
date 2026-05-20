@@ -12,6 +12,8 @@ from db import (
     create_user,
     delete_api,
     get_all_apis,
+    get_api_by_id,
+    get_apis_by_user,
     get_latest_log_for_all_apis,
     get_latest_logs,
     get_user_by_email,
@@ -128,7 +130,7 @@ def register():
 
     # Auto-login after registration
     session.clear()
-    session.permanent = True
+    session.permanent = False
     session["user_id"] = new_user["id"]
 
     return jsonify({
@@ -151,7 +153,7 @@ def login():
         return jsonify({"error": "Invalid email or password"}), 401
 
     session.clear()
-    session.permanent = True
+    session.permanent = False
     session["user_id"] = user["id"]
 
     return jsonify({
@@ -173,7 +175,7 @@ def logout():
 @app.route("/api/apis", methods=["GET"])
 @api_login_required
 def list_apis():
-    return jsonify(get_all_apis())
+    return jsonify(get_apis_by_user(session["user_id"]))
 
 
 @app.route("/api/add_api", methods=["POST"])
@@ -197,7 +199,7 @@ def add_api_endpoint():
             "error": "Interval must be at least 5 seconds and threshold at least 10 ms"
         }), 400
 
-    if add_api(name, url, interval_seconds, threshold_ms):
+    if add_api(session["user_id"], name, url, interval_seconds, threshold_ms):
         return jsonify({"message": "API added successfully"}), 201
     return jsonify({"error": "Failed to add API"}), 500
 
@@ -205,6 +207,12 @@ def add_api_endpoint():
 @app.route("/api/delete_api/<int:api_id>", methods=["DELETE"])
 @api_login_required
 def delete_api_endpoint(api_id):
+    api = get_api_by_id(api_id)
+    if not api:
+        return jsonify({"error": "API not found"}), 404
+    if api.get("user_id") != session["user_id"]:
+        return jsonify({"error": "Unauthorized"}), 403
+
     if delete_api(api_id):
         return jsonify({"message": "API deleted successfully"}), 200
     return jsonify({"error": "Failed to delete API"}), 500
@@ -213,7 +221,7 @@ def delete_api_endpoint(api_id):
 @app.route("/api/get_status", methods=["GET"])
 @api_login_required
 def get_status():
-    apis = get_all_apis()
+    apis = get_apis_by_user(session["user_id"])
     latest_logs = get_latest_log_for_all_apis()
 
     status_data = []
@@ -236,6 +244,11 @@ def get_status():
 @app.route("/api/logs/<int:api_id>", methods=["GET"])
 @api_login_required
 def get_logs(api_id):
+    api = get_api_by_id(api_id)
+    if not api:
+        return jsonify({"error": "API not found"}), 404
+    if api.get("user_id") != session["user_id"]:
+        return jsonify({"error": "Unauthorized"}), 403
     logs = get_latest_logs(api_id, limit=20)
     return jsonify(logs)
 

@@ -3,67 +3,325 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Account — Smart API Health Monitor</title>
-  <meta name="description" content="Create a new account to access the Smart API Health Monitoring dashboard.">
+  <title>Create Account — API Health Monitor</title>
+  <meta name="description" content="Create your free API Health Monitor account and start watching your services in minutes.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="landing-body">
+<body class="auth-page">
 
-  <!-- Floating Particles -->
-  <div class="particles" id="particles"></div>
+  <!-- Ambient background -->
+  <div class="auth-bg-mesh"></div>
+  <div class="auth-orb auth-orb-1"></div>
+  <div class="auth-orb auth-orb-2"></div>
+  <div class="auth-orb auth-orb-3"></div>
+  <div class="auth-particles" id="particles"></div>
 
-  <div class="landing-container glass-panel fade-in">
-    <div class="brand-icon">🛡️</div>
-    <h1 class="gradient-text">Create Account</h1>
-    <p>Sign up to start monitoring your APIs in real time.</p>
+  <!-- Split Layout -->
+  <div class="auth-split">
 
-    <div class="divider"></div>
-
-    <form id="registerForm" class="auth-form" novalidate>
-      <div class="form-group">
-        <label for="reg-email">Email Address</label>
-        <input type="email" id="reg-email" name="email" required
-               placeholder="you@example.com" autocomplete="email">
+    <!-- ── LEFT — Brand & Benefits ── -->
+    <aside class="auth-left">
+      <div class="auth-brand">
+        <div class="auth-brand-icon">🛡️</div>
+        <div>
+          <div class="auth-brand-name">API Health Monitor</div>
+          <div class="auth-brand-tagline">Smart Monitoring Platform</div>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="reg-password">Password</label>
-        <input type="password" id="reg-password" name="password" required
-               placeholder="At least 8 characters" autocomplete="new-password">
-      </div>
-      <div class="form-group">
-        <label for="reg-confirm">Confirm Password</label>
-        <input type="password" id="reg-confirm" name="confirm_password" required
-               placeholder="Repeat your password" autocomplete="new-password">
-      </div>
-      <button type="submit" id="registerSubmitBtn" class="primary-btn submit-btn">
-        Create Account →
-      </button>
-    </form>
 
-    <p id="registerError" class="auth-error hidden"></p>
+      <div class="auth-hero">
+        <h2>Start monitoring<br><span class="hl">in minutes.</span></h2>
+        <p>
+          Setting up takes less than 60 seconds. Add your first API endpoint
+          and we'll start checking it right away — for free.
+        </p>
+        <ul class="auth-features">
+          <li><div class="feat-dot">🆓</div> Free to use, no credit card needed</li>
+          <li><div class="feat-dot">⚡</div> First check runs in under a minute</li>
+          <li><div class="feat-dot">📧</div> Email alerts when your API goes down</li>
+          <li><div class="feat-dot">📊</div> Charts and history always available</li>
+        </ul>
+      </div>
 
-    <p class="auth-hint">
-      Already have an account? <a href="/" class="auth-link">Sign in</a>
-    </p>
+      <div class="auth-left-footer">
+        <div class="auth-stats-row">
+          <div class="auth-stat">
+            <div class="auth-stat-val">Free</div>
+            <div class="auth-stat-lbl">Forever</div>
+          </div>
+          <div class="auth-stat">
+            <div class="auth-stat-val">60s</div>
+            <div class="auth-stat-lbl">Setup time</div>
+          </div>
+          <div class="auth-stat">
+            <div class="auth-stat-val">∞</div>
+            <div class="auth-stat-lbl">Endpoints</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── RIGHT — Form + Animated Preview Cards ── -->
+    <main class="auth-right">
+
+      <!-- Glow spots -->
+      <div class="rp-glow rp-glow-1"></div>
+      <div class="rp-glow rp-glow-2"></div>
+
+      <!-- ════ FLOATING PREVIEW CARDS ════ -->
+      <div class="rp-floats">
+
+        <!-- SVG gradient def -->
+        <svg width="0" height="0" style="position:absolute">
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%"   stop-color="#2DD4BF"/>
+              <stop offset="100%" stop-color="#10B981"/>
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <!-- Card 1: Quick Steps (top-right) — register-specific -->
+        <div class="rp-card rp-card-status">
+          <div class="rp-status-row">
+            <div class="rp-status-dot"></div>
+            <div class="rp-status-label">Setup is easy</div>
+          </div>
+          <div class="rp-status-sub">3 simple steps to get started</div>
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:5px;">
+            <div style="display:flex;align-items:center;gap:7px;font-size:0.70rem;font-family:'Inter',sans-serif;color:#3D6B6B;font-weight:500;">
+              <span style="width:18px;height:18px;background:rgba(16,185,129,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.60rem;font-weight:800;color:#065F46;flex-shrink:0;">1</span>
+              Create your free account
+            </div>
+            <div style="display:flex;align-items:center;gap:7px;font-size:0.70rem;font-family:'Inter',sans-serif;color:#3D6B6B;font-weight:500;">
+              <span style="width:18px;height:18px;background:rgba(16,185,129,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.60rem;font-weight:800;color:#065F46;flex-shrink:0;">2</span>
+              Add your API endpoint URL
+            </div>
+            <div style="display:flex;align-items:center;gap:7px;font-size:0.70rem;font-family:'Inter',sans-serif;color:#7EACAC;font-weight:500;">
+              <span style="width:18px;height:18px;background:rgba(148,163,184,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.60rem;font-weight:800;color:#94A3B8;flex-shrink:0;">3</span>
+              Watch it live on your dashboard
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: APIs Monitored counter (bottom-right) -->
+        <div class="rp-card rp-card-metric">
+          <div class="rp-metric-label">APIs Tracked</div>
+          <div class="rp-metric-value" id="rp-count">6</div>
+          <div class="rp-metric-unit">endpoints · right now</div>
+          <div class="rp-sparkline">
+            <div class="rp-spark"></div><div class="rp-spark"></div>
+            <div class="rp-spark"></div><div class="rp-spark"></div>
+            <div class="rp-spark"></div><div class="rp-spark"></div>
+            <div class="rp-spark"></div><div class="rp-spark"></div>
+          </div>
+        </div>
+
+        <!-- Card 3: Uptime ring (top-left) -->
+        <div class="rp-card rp-card-uptime">
+          <div class="rp-ring-wrap">
+            <svg class="rp-ring-svg" viewBox="0 0 68 68">
+              <circle class="rp-ring-track" cx="34" cy="34" r="27"/>
+              <circle class="rp-ring-fill"  cx="34" cy="34" r="27"/>
+            </svg>
+            <div class="rp-ring-center">
+              <div class="rp-ring-pct">99.9</div>
+              <div class="rp-ring-lbl">%</div>
+            </div>
+          </div>
+          <div class="rp-uptime-label">Platform uptime</div>
+        </div>
+
+        <!-- Card 4: Live alerts feed (bottom-left) -->
+        <div class="rp-card rp-card-feed">
+          <div class="rp-feed-title">
+            <div class="rp-feed-live-dot"></div>
+            Recent alerts
+          </div>
+          <div class="rp-feed-rows" id="rpFeedRows">
+            <div class="rp-feed-row ok">
+              <span class="rp-feed-icon">✅</span>
+              <span class="rp-feed-name">Auth API</span>
+              <span class="rp-feed-time">2s ago</span>
+            </div>
+            <div class="rp-feed-row ok">
+              <span class="rp-feed-icon">✅</span>
+              <span class="rp-feed-name">Search API</span>
+              <span class="rp-feed-time">7s ago</span>
+            </div>
+            <div class="rp-feed-row slow">
+              <span class="rp-feed-icon">⚠️</span>
+              <span class="rp-feed-name">Report Svc</span>
+              <span class="rp-feed-time">12s ago</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end .rp-floats -->
+
+      <!-- ════ ACTUAL FORM ════ -->
+      <div class="auth-form-wrap">
+        <div class="auth-heading">
+          <div class="auth-greeting">🚀 Get started</div>
+          <h1>Create your free account</h1>
+          <p>Takes less than a minute. No credit card required.</p>
+        </div>
+
+        <form id="registerForm" class="auth-form" novalidate>
+          <div class="auth-field">
+            <label for="reg-email">Your email</label>
+            <div class="auth-input-row">
+              <span class="a-icon">✉</span>
+              <input type="email" id="reg-email" name="email" required
+                placeholder="e.g. you@company.com" autocomplete="email">
+            </div>
+          </div>
+
+          <div class="auth-field">
+            <label for="reg-password">Choose a password</label>
+            <div class="auth-input-row">
+              <span class="a-icon">🔑</span>
+              <input type="password" id="reg-password" name="password" required
+                placeholder="At least 8 characters" autocomplete="new-password">
+            </div>
+            <div class="pwd-strength" id="pwdStrength">
+              <div class="pwd-track"><div class="pwd-fill" id="pwdFill"></div></div>
+              <div class="pwd-label" id="pwdLabel">Too short</div>
+            </div>
+            <p class="field-hint">Use 8+ characters with letters, numbers &amp; symbols.</p>
+          </div>
+
+          <div class="auth-field">
+            <label for="reg-confirm">Confirm your password</label>
+            <div class="auth-input-row">
+              <span class="a-icon">🔒</span>
+              <input type="password" id="reg-confirm" name="confirm_password" required
+                placeholder="Type your password again" autocomplete="new-password">
+            </div>
+            <p class="field-hint" id="confirmHint"></p>
+          </div>
+
+          <button type="submit" id="registerSubmitBtn" class="auth-submit">
+            Create my account  →
+          </button>
+        </form>
+
+        <div id="registerError" class="auth-error-msg hidden">
+          <span>⚠</span>
+          <span id="registerErrorText"></span>
+        </div>
+
+        <p class="auth-switch">
+          Already have an account? <a href="/">Sign in here</a>
+        </p>
+      </div>
+
+    </main>
   </div>
 
   <script src="script.js"></script>
   <script>
+    /* ── Teal particles ── */
     const container = document.getElementById('particles');
-    for (let i = 0; i < 25; i++) {
+    const shades = ['#14B8A6','#2DD4BF','#5EEAD4','#10B981','#34D399','#06B6D4','#22D3EE','#0D9488'];
+    for (let i = 0; i < 32; i++) {
       const p = document.createElement('div');
-      p.className = 'particle';
-      const size = Math.random() * 4 + 2;
-      p.style.cssText = `
-        width: ${size}px; height: ${size}px;
-        left: ${Math.random() * 100}%;
-        animation-duration: ${Math.random() * 15 + 10}s;
-        animation-delay: ${Math.random() * 10}s;
-        background: ${Math.random() > 0.5 ? '#8b5cf6' : '#4f46e5'};
-        opacity: 0;
-      `;
+      p.className = 'auth-particle';
+      const size = Math.random() * 5 + 2;
+      const shade = shades[Math.floor(Math.random() * shades.length)];
+      p.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;
+        animation-duration:${Math.random()*18+10}s;animation-delay:-${Math.random()*18}s;
+        background:${shade};box-shadow:0 0 ${size*2}px ${shade};opacity:0;`;
       container.appendChild(p);
     }
+
+    /* ── Cycle API count on metric card ── */
+    const countEl = document.getElementById('rp-count');
+    let count = 6;
+    if (countEl) {
+      setInterval(() => {
+        count = Math.floor(Math.random() * 4) + 5;
+        countEl.style.opacity = '0.2';
+        setTimeout(() => { countEl.textContent = count; countEl.style.opacity = '1'; }, 380);
+      }, 3200);
+    }
+
+    /* ── Cycle activity feed ── */
+    const feedData = [
+      { state: 'ok',   icon: '✅', name: 'Auth API',      time: '2s ago' },
+      { state: 'ok',   icon: '✅', name: 'Search API',    time: '7s ago' },
+      { state: 'slow', icon: '⚠️', name: 'Report Svc',    time: '12s ago' },
+      { state: 'ok',   icon: '✅', name: 'Payment API',   time: '18s ago' },
+      { state: 'ok',   icon: '✅', name: 'Storage API',   time: '24s ago' },
+      { state: 'fail', icon: '🔴', name: 'Old Proxy',     time: '31s ago' },
+      { state: 'ok',   icon: '✅', name: 'Webhook Svc',   time: '38s ago' },
+    ];
+    const feedContainer = document.getElementById('rpFeedRows');
+    let feedStart = 0;
+    function cycleFeed() {
+      if (!feedContainer) return;
+      const items = feedData.slice(feedStart, feedStart + 3);
+      feedContainer.innerHTML = items.map(r => `
+        <div class="rp-feed-row ${r.state}">
+          <span class="rp-feed-icon">${r.icon}</span>
+          <span class="rp-feed-name">${r.name}</span>
+          <span class="rp-feed-time">${r.time}</span>
+        </div>`).join('');
+      feedStart = (feedStart + 1) % feedData.length;
+    }
+    setInterval(cycleFeed, 2500);
+
+    /* ── Password strength ── */
+    const pwdInput    = document.getElementById('reg-password');
+    const pwdFill     = document.getElementById('pwdFill');
+    const pwdLabel    = document.getElementById('pwdLabel');
+    const pwdStrength = document.getElementById('pwdStrength');
+    const cfmInput    = document.getElementById('reg-confirm');
+    const cfmHint     = document.getElementById('confirmHint');
+    const LEVELS = [
+      { label: 'Too short',  color: '#EF4444', pct: '10%'  },
+      { label: 'Weak',       color: '#F97316', pct: '30%'  },
+      { label: 'Fair',       color: '#EAB308', pct: '55%'  },
+      { label: 'Good',       color: '#22C55E', pct: '78%'  },
+      { label: 'Strong 💪', color: '#14B8A6', pct: '100%' },
+    ];
+    pwdInput.addEventListener('input', () => {
+      const v = pwdInput.value;
+      pwdStrength.classList.toggle('show', v.length > 0);
+      if (!v) return;
+      let score = 0;
+      if (v.length >= 8)          score++;
+      if (/[A-Z]/.test(v))        score++;
+      if (/[0-9]/.test(v))        score++;
+      if (/[^A-Za-z0-9]/.test(v)) score++;
+      const lvl = LEVELS[score] || LEVELS[4];
+      pwdFill.style.width  = lvl.pct;
+      pwdFill.style.background = lvl.color;
+      pwdLabel.textContent = lvl.label;
+      pwdLabel.style.color = lvl.color;
+    });
+    cfmInput.addEventListener('input', () => {
+      const match = cfmInput.value === pwdInput.value;
+      if (!cfmInput.value) { cfmHint.textContent = ''; cfmInput.style.borderColor = ''; return; }
+      cfmHint.textContent  = match ? '✓ Passwords match' : '✕ Passwords don\'t match';
+      cfmHint.style.color  = match ? '#059669' : '#DC2626';
+      cfmInput.style.borderColor = match ? '#10B981' : '#DC2626';
+    });
+
+    /* ── Error patch for script.js ── */
+    const regErrEl   = document.getElementById('registerError');
+    const regErrText = document.getElementById('registerErrorText');
+    const errObs = new MutationObserver(() => {
+      const txt = regErrEl.textContent.trim();
+      if (txt && regErrText) {
+        regErrText.textContent = txt;
+        if (regErrEl.childNodes.length === 1 && regErrEl.childNodes[0].nodeType === 3)
+          regErrEl.innerHTML = `<span>⚠</span><span id="registerErrorText">${txt}</span>`;
+      }
+    });
+    errObs.observe(regErrEl, { childList: true, subtree: true, characterData: true });
   </script>
 </body>
 </html>
