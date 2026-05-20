@@ -5,12 +5,8 @@ import time
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 
-try:
-    from backend.db import get_all_apis, add_log
-    from backend.services.alert import send_alert_email
-except ImportError:
-    from db import get_all_apis, add_log
-    from alert import send_alert_email
+from backend.db import get_all_apis, add_log
+from backend.services.alert import send_alert_email
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

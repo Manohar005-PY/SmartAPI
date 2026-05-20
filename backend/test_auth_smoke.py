@@ -7,11 +7,11 @@ or:
 """
 import unittest
 
-from db import init_db
+from backend.db import init_db
 
 init_db()
 
-from app import app
+from backend.app import app
 
 
 class AuthSmokeTest(unittest.TestCase):

@@ -2,14 +2,9 @@ import os
 from flask import Flask
 from flask_cors import CORS
 
-try:
-    from backend.config import Config
-    from backend.db import init_db
-    from backend.routes import auth_bp, apis_bp, frontend_bp
-except ImportError:
-    from config import Config
-    from db import init_db
-    from routes import auth_bp, apis_bp, frontend_bp
+from backend.config import Config
+from backend.db import init_db
+from backend.routes import auth_bp, apis_bp, frontend_bp
 
 FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend"))
 
@@ -35,10 +30,7 @@ if __name__ == "__main__":
     init_db()  # Initialize database (tables, migrations)
     
     # Start inline scheduler for local development convenience
-    try:
-        from backend.services.scheduler import start_scheduler
-    except ImportError:
-        from services.scheduler import start_scheduler
+    from backend.services.scheduler import start_scheduler
     start_scheduler()
     
     # Use PORT environment variable or default to 5000

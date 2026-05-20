@@ -1,25 +1,14 @@
 from flask import Blueprint, jsonify, request, session
 
-try:
-    from backend.db import (
-        add_api,
-        delete_api,
-        get_api_by_id,
-        get_apis_by_user,
-        get_latest_log_for_all_apis,
-        get_latest_logs,
-    )
-    from backend.routes.auth import api_login_required
-except ImportError:
-    from db import (
-        add_api,
-        delete_api,
-        get_api_by_id,
-        get_apis_by_user,
-        get_latest_log_for_all_apis,
-        get_latest_logs,
-    )
-    from routes.auth import api_login_required
+from backend.db import (
+    add_api,
+    delete_api,
+    get_api_by_id,
+    get_apis_by_user,
+    get_latest_log_for_all_apis,
+    get_latest_logs,
+)
+from backend.routes.auth import api_login_required
 
 apis_bp = Blueprint("apis", __name__)
 

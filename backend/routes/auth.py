@@ -3,10 +3,7 @@ import re
 from flask import Blueprint, jsonify, request, session
 from werkzeug.security import check_password_hash
 
-try:
-    from backend.db import create_user, get_user_by_email, get_user_by_id
-except ImportError:
-    from db import create_user, get_user_by_email, get_user_by_id
+from backend.db import create_user, get_user_by_email, get_user_by_id
 
 auth_bp = Blueprint("auth", __name__)
 

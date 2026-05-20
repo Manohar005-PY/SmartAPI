@@ -10,7 +10,7 @@ except ImportError:
     PSYCOPG2_AVAILABLE = False
 
 from werkzeug.security import generate_password_hash
-from config import Config
+from backend.config import Config
 
 # ---------------------------------------------------------------------------
 # DB engine detection

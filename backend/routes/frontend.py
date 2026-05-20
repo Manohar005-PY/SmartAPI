@@ -1,10 +1,7 @@
 import os
 from flask import Blueprint, redirect, send_from_directory
 
-try:
-    from backend.routes.auth import is_authenticated
-except ImportError:
-    from routes.auth import is_authenticated
+from backend.routes.auth import is_authenticated
 
 frontend_bp = Blueprint("frontend", __name__)
 FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend"))

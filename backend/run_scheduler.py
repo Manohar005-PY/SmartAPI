@@ -3,13 +3,13 @@ import sys
 import time
 import logging
 
-# Ensure the backend directory is in the search path
-backend_dir = os.path.abspath(os.path.dirname(__file__))
-if backend_dir not in sys.path:
-    sys.path.insert(0, backend_dir)
+# Ensure the project root directory is in the search path
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
 
-from db import init_db
-from services.scheduler import start_scheduler
+from backend.db import init_db
+from backend.services.scheduler import start_scheduler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("run_scheduler")
