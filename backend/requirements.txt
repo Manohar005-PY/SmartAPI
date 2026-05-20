@@ -2,9 +2,11 @@
 Flask==3.0.0
 Flask-CORS==4.0.0
 Werkzeug==3.0.1           # Password hashing + WSGI utilities (must match Flask 3.0.x)
+gunicorn==21.2.0          # WSGI production server
+python-dotenv==1.0.0      # Load environment variables from .env
 
 # ─── Database ──────────────────────────────────────────────────────────────────
-mysql-connector-python==8.2.0   # MySQL driver (optional – falls back to built-in SQLite)
+psycopg2-binary==2.9.9    # PostgreSQL adapter (replaces mysql-connector)
 
 # ─── HTTP Client (API polling) ─────────────────────────────────────────────────
 requests==2.31.0

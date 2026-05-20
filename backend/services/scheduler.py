@@ -1,11 +1,16 @@
+import csv
+import logging
+import os
+import time
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
-import time
-import csv
-import os
-from db import get_all_apis, add_log
-from alert import send_alert_email
-import logging
+
+try:
+    from backend.db import get_all_apis, add_log
+    from backend.services.alert import send_alert_email
+except ImportError:
+    from db import get_all_apis, add_log
+    from alert import send_alert_email
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -15,7 +20,9 @@ consecutive_failures = {}
 # Dictionary to track alert status so we don't alert multiple times for the same prolonged outage
 alert_sent_for = {}
 
-CSV_LOG_PATH = os.path.join(os.path.dirname(__file__), '../logs/logs.csv')
+CSV_LOG_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "../../logs/logs.csv")
+)
 
 def log_to_csv(api_name, status, response_time, state):
     try:
@@ -27,7 +34,6 @@ def log_to_csv(api_name, status, response_time, state):
             if not file_exists:
                 writer.writeheader()
             
-            # Note: For time we just get the formatted current local time
             from datetime import datetime
             dt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             writer.writerow({
@@ -52,7 +58,7 @@ def check_api(api):
         response_time_ms = int((time.time() - start_time) * 1000)
         status_code = response.status_code
         
-        if status_code >= 200 and status_code < 400:
+        if 200 <= status_code < 400:
             if response_time_ms > threshold_ms:
                 state = "SLOW"
                 consecutive_failures[api_id] = 0

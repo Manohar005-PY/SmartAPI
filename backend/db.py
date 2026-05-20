@@ -2,40 +2,42 @@ import os
 import sqlite3
 import threading
 
-import mysql.connector
-from mysql.connector import Error
-from werkzeug.security import generate_password_hash
+try:
+    import psycopg2
+    import psycopg2.extras
+    PSYCOPG2_AVAILABLE = True
+except ImportError:
+    PSYCOPG2_AVAILABLE = False
 
+from werkzeug.security import generate_password_hash
 from config import Config
 
 # ---------------------------------------------------------------------------
-# DB engine detection & connection pool
+# DB engine detection
 # ---------------------------------------------------------------------------
 
-# Resolved engine: "mysql" or "sqlite" — set once during init_db()
+# Resolved engine: "postgres" or "sqlite" — set once during init_db()
 DB_ENGINE: str | None = None
 
-# One persistent connection per thread (SQLite) or a single shared connection
-# guarded by a lock (MySQL).  We re-connect automatically on any failure.
-_mysql_connection: mysql.connector.MySQLConnection | None = None
-_mysql_lock = threading.Lock()
+_sqlite_local = threading.local()
+_postgres_local = threading.local()
 
 # ---------------------------------------------------------------------------
 # Table DDL
 # ---------------------------------------------------------------------------
 
-MYSQL_TABLE_STATEMENTS = [
+POSTGRES_TABLE_STATEMENTS = [
     """
     CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         email VARCHAR(255) NOT NULL UNIQUE,
         password_hash VARCHAR(255) NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """,
     """
     CREATE TABLE IF NOT EXISTS apis (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         user_id INT,
         name VARCHAR(255) NOT NULL,
         url VARCHAR(255) NOT NULL,
@@ -46,9 +48,9 @@ MYSQL_TABLE_STATEMENTS = [
     """,
     """
     CREATE TABLE IF NOT EXISTS logs (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         api_id INT NOT NULL,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         status_code INT,
         response_time INT,
         state VARCHAR(20) NOT NULL,
@@ -100,16 +102,14 @@ def get_sqlite_path() -> str:
     )
 
 
-def _new_mysql_connection(include_database: bool = True) -> mysql.connector.MySQLConnection:
-    kwargs = {
-        "host": Config.DB_HOST,
-        "user": Config.DB_USER,
-        "password": Config.DB_PASSWORD,
-        "autocommit": False,
-    }
-    if include_database:
-        kwargs["database"] = Config.DB_NAME
-    return mysql.connector.connect(**kwargs)
+def _new_postgres_connection():
+    if not PSYCOPG2_AVAILABLE:
+        raise ImportError("psycopg2 is not installed but required for PostgreSQL connection.")
+    db_url = Config.DATABASE_URL
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+    conn = psycopg2.connect(db_url)
+    return conn
 
 
 def _new_sqlite_connection() -> sqlite3.Connection:
@@ -133,19 +133,31 @@ def get_placeholder(conn) -> str:
 def get_cursor(conn, dictionary: bool = False):
     if is_sqlite_connection(conn):
         return conn.cursor()
-    return conn.cursor(dictionary=dictionary)
+    # Postgres cursor helper
+    if dictionary:
+        return conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    return conn.cursor()
 
 
 def fetch_all(cursor):
     rows = cursor.fetchall()
-    if rows and isinstance(rows[0], sqlite3.Row):
+    if not rows:
+        return []
+    if isinstance(rows[0], sqlite3.Row):
+        return [dict(row) for row in rows]
+    # For psycopg2 dict cursor rows
+    if hasattr(rows[0], "keys") or isinstance(rows[0], dict):
         return [dict(row) for row in rows]
     return rows
 
 
 def fetch_one(cursor):
     row = cursor.fetchone()
+    if row is None:
+        return None
     if isinstance(row, sqlite3.Row):
+        return dict(row)
+    if hasattr(row, "keys") or isinstance(row, dict):
         return dict(row)
     return row
 
@@ -154,24 +166,15 @@ def fetch_one(cursor):
 # Persistent connection management
 # ---------------------------------------------------------------------------
 
-def _get_persistent_mysql_connection() -> mysql.connector.MySQLConnection:
-    """Return the shared MySQL connection, reconnecting if needed."""
-    global _mysql_connection
-    with _mysql_lock:
-        try:
-            if _mysql_connection is None or not _mysql_connection.is_connected():
-                _mysql_connection = _new_mysql_connection(include_database=True)
-        except Error as exc:
-            raise exc
-        return _mysql_connection
-
-
-# SQLite uses thread-local storage so each thread gets its own connection.
-_sqlite_local = threading.local()
+def _get_persistent_postgres_connection():
+    conn = getattr(_postgres_local, "connection", None)
+    if conn is None or conn.closed != 0:
+        conn = _new_postgres_connection()
+        _postgres_local.connection = conn
+    return conn
 
 
 def _get_persistent_sqlite_connection() -> sqlite3.Connection:
-    """Return a per-thread SQLite connection, opening it if necessary."""
     conn = getattr(_sqlite_local, "connection", None)
     if conn is None:
         conn = _new_sqlite_connection()
@@ -180,20 +183,13 @@ def _get_persistent_sqlite_connection() -> sqlite3.Connection:
 
 
 def get_db_connection():
-    """
-    Return the active database connection.
-    MySQL: one shared persistent connection (thread-safe via lock).
-    SQLite: one connection per thread.
-    Always raises on failure rather than returning None.
-    """
     global DB_ENGINE
-    if DB_ENGINE == "mysql":
-        return _get_persistent_mysql_connection()
+    if DB_ENGINE == "postgres":
+        return _get_persistent_postgres_connection()
     return _get_persistent_sqlite_connection()
 
 
 def get_db_engine_name() -> str:
-    """Public helper — returns 'mysql' or 'sqlite'."""
     return DB_ENGINE or "sqlite"
 
 
@@ -211,42 +207,26 @@ def _execute_table_statements(connection, statements):
         cursor.close()
 
 
-def _ensure_mysql_database():
-    conn = _new_mysql_connection(include_database=False)
-    cur = conn.cursor()
-    try:
-        cur.execute(f"CREATE DATABASE IF NOT EXISTS `{Config.DB_NAME}`")
-        conn.commit()
-    finally:
-        cur.close()
-        conn.close()
-
-
 def init_db():
-    """
-    Detect the database engine, create tables, seed the default admin user,
-    and open the persistent connection that will be reused throughout the app
-    lifetime.  Falls back to SQLite if MySQL is unavailable.
-    """
     global DB_ENGINE
 
-    # --- Try MySQL first ---
-    try:
-        _ensure_mysql_database()
-        bootstrap_conn = _new_mysql_connection(include_database=True)
-        _execute_table_statements(bootstrap_conn, MYSQL_TABLE_STATEMENTS)
-        _ensure_default_user(bootstrap_conn)
-        _run_migrations(bootstrap_conn)
-        bootstrap_conn.close()
-        DB_ENGINE = "mysql"
-        # Now open the persistent connection
-        _get_persistent_mysql_connection()
-        print("[OK] Database initialised -- MySQL.")
-        return
-    except Exception as exc:
-        print(f"[WARN] MySQL unavailable ({exc}), falling back to SQLite.")
+    # Try PostgreSQL first if DATABASE_URL is configured
+    if Config.DATABASE_URL and PSYCOPG2_AVAILABLE:
+        try:
+            bootstrap_conn = _new_postgres_connection()
+            _execute_table_statements(bootstrap_conn, POSTGRES_TABLE_STATEMENTS)
+            _ensure_default_user(bootstrap_conn)
+            _run_migrations(bootstrap_conn)
+            bootstrap_conn.close()
+            DB_ENGINE = "postgres"
+            # Verify persistent connection can be opened
+            _get_persistent_postgres_connection()
+            print("[OK] Database initialised -- PostgreSQL.")
+            return
+        except Exception as exc:
+            print(f"[WARN] PostgreSQL unavailable ({exc}), falling back to SQLite.")
 
-    # --- SQLite fallback ---
+    # SQLite fallback
     DB_ENGINE = "sqlite"
     conn = _get_persistent_sqlite_connection()
     _execute_table_statements(conn, SQLITE_TABLE_STATEMENTS)
@@ -256,7 +236,6 @@ def init_db():
 
 
 def _ensure_default_user(conn):
-    """Seed admin account on first start if it does not exist."""
     ph = get_placeholder(conn)
     cur = get_cursor(conn, dictionary=True)
     try:
@@ -275,10 +254,6 @@ def _ensure_default_user(conn):
 
 
 def _run_migrations(conn):
-    """
-    Check if the apis table has user_id. If not, add it and assign existing
-    APIs to the first user in the database (default admin).
-    """
     is_sqlite = is_sqlite_connection(conn)
     cur = get_cursor(conn, dictionary=True)
     try:
@@ -294,9 +269,12 @@ def _run_migrations(conn):
                 else:
                     columns.append(r[1])
         else:
-            cur.execute("SHOW COLUMNS FROM apis LIKE 'user_id'")
+            cur.execute(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'apis' AND column_name = 'user_id'"
+            )
             rows = cur.fetchall()
-            columns = [r["Field"] if isinstance(r, dict) else r[0] for r in rows]
+            columns = [r["column_name"] if isinstance(r, dict) else r[0] for r in rows]
 
         if "user_id" not in columns:
             print("[MIGRATION] Adding user_id column to apis table…")
@@ -332,22 +310,30 @@ def _run_migrations(conn):
 # ---------------------------------------------------------------------------
 
 def _retry(fn):
-    """Decorator: on OperationalError / connection reset, reconnect once and retry."""
     import functools
 
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         try:
             return fn(*args, **kwargs)
-        except (sqlite3.OperationalError, Error) as exc:
-            print(f"DB error ({exc}), attempting reconnect…")
-            global _mysql_connection
-            if DB_ENGINE == "mysql":
-                with _mysql_lock:
-                    _mysql_connection = None
+        except Exception as exc:
+            # Reconnect only on DB OperationalError/InterfaceError
+            is_db_err = False
+            if isinstance(exc, sqlite3.OperationalError):
+                is_db_err = True
+            elif PSYCOPG2_AVAILABLE and isinstance(exc, (psycopg2.OperationalError, psycopg2.InterfaceError)):
+                is_db_err = True
+
+            if is_db_err:
+                print(f"DB error ({exc}), attempting reconnect…")
+                global DB_ENGINE
+                if DB_ENGINE == "postgres":
+                    _postgres_local.connection = None
+                else:
+                    _sqlite_local.connection = None
+                return fn(*args, **kwargs)
             else:
-                _sqlite_local.connection = None
-            return fn(*args, **kwargs)  # second attempt — propagate if still failing
+                raise
 
     return wrapper
 
@@ -403,10 +389,6 @@ def get_user_by_id(user_id: int):
 
 @_retry
 def create_user(email: str, password: str) -> dict | None:
-    """
-    Register a new user.  Returns the newly created user dict on success,
-    or None if the email already exists.
-    """
     conn = get_db_connection()
     ph = get_placeholder(conn)
     cur = get_cursor(conn, dictionary=True)
@@ -415,7 +397,7 @@ def create_user(email: str, password: str) -> dict | None:
         # Check duplicate
         cur.execute(f"SELECT id FROM users WHERE email = {ph}", (norm_email,))
         if fetch_one(cur):
-            return None  # duplicate
+            return None
 
         password_hash = generate_password_hash(password)
         cur.execute(
@@ -423,11 +405,8 @@ def create_user(email: str, password: str) -> dict | None:
             (norm_email, password_hash),
         )
         conn.commit()
-        # Fetch the new record to return it
-        if is_sqlite_connection(conn):
-            new_id = cur.lastrowid
-        else:
-            new_id = cur.lastrowid  # same attribute for mysql.connector
+        
+        new_id = cur.lastrowid
         cur.execute(
             f"SELECT id, email, created_at FROM users WHERE id = {ph}", (new_id,)
         )
@@ -517,7 +496,6 @@ def get_latest_logs(api_id: int, limit: int = 50) -> list:
     ph = get_placeholder(conn)
     cur = get_cursor(conn, dictionary=True)
     try:
-        # Use a Python int directly in the LIMIT clause — safe because we control the value
         cur.execute(
             f"SELECT * FROM logs WHERE api_id = {ph}"
             f" ORDER BY timestamp DESC LIMIT {int(limit)}",
@@ -531,7 +509,6 @@ def get_latest_logs(api_id: int, limit: int = 50) -> list:
 
 @_retry
 def get_latest_log_for_all_apis() -> dict:
-    """Returns {api_id: log_row} for the most recent log of every API."""
     conn = get_db_connection()
     cur = get_cursor(conn, dictionary=True)
     try:

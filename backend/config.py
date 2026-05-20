@@ -1,14 +1,15 @@
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file (for local development)
+load_dotenv(os.path.join(os.path.dirname(__file__), "../.env"))
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "change-this-secret-key")
 
     # Database Configuration
-    DB_ENGINE = os.getenv("DB_ENGINE", "auto")
-    DB_HOST = os.getenv("DB_HOST", "localhost")
-    DB_USER = os.getenv("DB_USER", "root")
-    DB_PASSWORD = os.getenv("DB_PASSWORD", "")
-    DB_NAME = os.getenv("DB_NAME", "api_health_monitor")
+    # Uses DATABASE_URL (PostgreSQL) if available; otherwise falls back to SQLite.
+    DATABASE_URL = os.getenv("DATABASE_URL")
 
     # Default sign-in user created on first startup
     DEFAULT_ADMIN_EMAIL = os.getenv("DEFAULT_ADMIN_EMAIL", "admin@example.com")

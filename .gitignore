@@ -1,0 +1,25 @@
+# Python bytecode
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environments
+.env
+.venv/
+venv/
+ENV/
+
+# Databases & local logs
+data/
+*.db
+*.db-shm
+*.db-wal
+logs/
+*.csv
+*.log
+
+# Caches
+.pytest_cache/
+.coverage
+htmlcov/
