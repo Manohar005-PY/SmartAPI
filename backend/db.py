@@ -210,23 +210,45 @@ def _execute_table_statements(connection, statements):
 def init_db():
     global DB_ENGINE
 
-    # Try PostgreSQL first if DATABASE_URL is configured
-    if Config.DATABASE_URL and PSYCOPG2_AVAILABLE:
-        try:
-            bootstrap_conn = _new_postgres_connection()
-            _execute_table_statements(bootstrap_conn, POSTGRES_TABLE_STATEMENTS)
-            _ensure_default_user(bootstrap_conn)
-            _run_migrations(bootstrap_conn)
-            bootstrap_conn.close()
-            DB_ENGINE = "postgres"
-            # Verify persistent connection can be opened
-            _get_persistent_postgres_connection()
-            print("[OK] Database initialised -- PostgreSQL.")
-            return
-        except Exception as exc:
-            print(f"[WARN] PostgreSQL unavailable ({exc}), falling back to SQLite.")
+    # If DATABASE_URL is configured, we MUST use PostgreSQL (no SQLite fallback in production)
+    if Config.DATABASE_URL:
+        if not PSYCOPG2_AVAILABLE:
+            raise ImportError(
+                "DATABASE_URL is set, but psycopg2-binary is not installed. "
+                "Cannot connect to PostgreSQL database."
+            )
+        
+        max_retries = 5
+        retry_delay = 2
+        last_exception = None
+        
+        for attempt in range(1, max_retries + 1):
+            try:
+                print(f"Connecting to PostgreSQL (attempt {attempt}/{max_retries})...")
+                bootstrap_conn = _new_postgres_connection()
+                _execute_table_statements(bootstrap_conn, POSTGRES_TABLE_STATEMENTS)
+                _ensure_default_user(bootstrap_conn)
+                _run_migrations(bootstrap_conn)
+                bootstrap_conn.close()
+                DB_ENGINE = "postgres"
+                # Note: We do NOT verify or pre-open the persistent connection here
+                # to prevent Gunicorn master process from inheriting an active TCP socket.
+                print("[OK] Database initialised -- PostgreSQL.")
+                return
+            except Exception as exc:
+                last_exception = exc
+                print(f"[WARN] PostgreSQL connection attempt {attempt} failed: {exc}")
+                if attempt < max_retries:
+                    import time
+                    time.sleep(retry_delay)
+        
+        # If all retries fail, fail-fast and crash to allow orchestration/Render to restart container
+        raise RuntimeError(
+            f"Failed to connect to PostgreSQL database after {max_retries} attempts. "
+            f"Startup aborted. Error: {last_exception}"
+        )
 
-    # SQLite fallback
+    # SQLite fallback (only for local development when DATABASE_URL is not set)
     DB_ENGINE = "sqlite"
     conn = _get_persistent_sqlite_connection()
     _execute_table_statements(conn, SQLITE_TABLE_STATEMENTS)

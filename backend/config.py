@@ -5,7 +5,11 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), "../.env"))
 
 class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY", "change-this-secret-key")
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    if not SECRET_KEY or SECRET_KEY == "change-this-secret-key":
+        if os.getenv("RENDER") == "true":
+            raise RuntimeError("SECRET_KEY environment variable is required and must not be default in production!")
+        SECRET_KEY = "change-this-secret-key"
 
     # Database Configuration
     # Uses DATABASE_URL (PostgreSQL) if available; otherwise falls back to SQLite.
