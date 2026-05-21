@@ -101,6 +101,9 @@ def dynamic_scheduler():
             last_checked[api_id] = current_time
 
 def start_scheduler():
+    if scheduler.running:
+        logger.info("Scheduler is already running.")
+        return
     # Adding to scheduler to run every 5 seconds to provide tight looping
     # over intervals which may be set higher like 60s
     scheduler.add_job(dynamic_scheduler, 'interval', seconds=5)

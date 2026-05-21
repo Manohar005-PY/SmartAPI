@@ -30,6 +30,13 @@ def create_app():
     app.register_blueprint(apis_bp)
     app.register_blueprint(frontend_bp)
     
+    # Start inline background scheduler for single-service deployments
+    from backend.services.scheduler import start_scheduler
+    try:
+        start_scheduler()
+    except Exception as exc:
+        app.logger.warning(f"Could not start background scheduler on initialization: {exc}")
+
     return app
 
 app = create_app()

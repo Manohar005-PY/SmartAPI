@@ -456,13 +456,23 @@ def create_user(email: str, password: str) -> dict | None:
             return None
 
         password_hash = generate_password_hash(password)
-        cur.execute(
-            f"INSERT INTO users (email, password_hash) VALUES ({ph}, {ph})",
-            (norm_email, password_hash),
-        )
-        conn.commit()
-        
-        new_id = cur.lastrowid
+        is_sqlite = is_sqlite_connection(conn)
+        if is_sqlite:
+            cur.execute(
+                f"INSERT INTO users (email, password_hash) VALUES ({ph}, {ph})",
+                (norm_email, password_hash),
+            )
+            conn.commit()
+            new_id = cur.lastrowid
+        else:
+            cur.execute(
+                "INSERT INTO users (email, password_hash) VALUES (%s, %s) RETURNING id",
+                (norm_email, password_hash),
+            )
+            row = cur.fetchone()
+            new_id = row["id"] if (isinstance(row, dict) or hasattr(row, "keys")) else row[0]
+            conn.commit()
+
         cur.execute(
             f"SELECT id, email, created_at FROM users WHERE id = {ph}", (new_id,)
         )
